@@ -4,6 +4,7 @@
 #include <boost/network/protocol/http/client.hpp>
 #include <cppformat/format.h>
 #include <json.hpp>
+#include <date.h>
 
 namespace http = boost::network::http;
 namespace nl = nlohmann;
@@ -68,6 +69,39 @@ auto do_delete(const std::string& uri, const std::string& key)
     return check_response(response);
 }
 
+auto string_to_time_point(const std::string& s) -> time_point
+{
+    // This is an offensive amount of work to go through just to get a
+    // system_clock::time_point with fractional seconds...
+    // https://github.com/HowardHinnant/date/wiki/Examples-and-Recipes#time_point_to_components
+    if (s.length() < 29) {
+        throw std::runtime_error{fmt::format("\"{}\" does not look like a datetime string", s)};
+    }
+
+    auto year = std::stoi(s.substr(0, 4));
+    auto month = std::stoi(s.substr(5, 2));
+    auto day = std::stoi(s.substr(8, 2));
+    auto hour = std::stoi(s.substr(11, 2));
+    auto min = std::stoi(s.substr(14, 2));
+    auto sec = std::stoi(s.substr(17, 2));
+    auto nsec = std::stoi(s.substr(20, 9));
+
+    auto ymd = date::year{year}/month/day;
+
+    if (!ymd.ok()) {
+        throw std::runtime_error{"Invalid date"};
+    }
+
+    auto p =
+            date::day_point{ymd} +
+            std::chrono::hours{hour} +
+            std::chrono::minutes{min} +
+            std::chrono::seconds{sec} +
+            date::round<time_point::duration>(std::chrono::nanoseconds{nsec});
+
+    return p;
+};
+
 auto make_order_status(const nl::json& json)
 {
     auto s = order_status{
@@ -80,11 +114,15 @@ auto make_order_status(const nl::json& json)
             order_type_from_string(json.at("orderType")),
             json.at("id"),
             json.at("account"),
-            json.at("ts")
+            string_to_time_point(json.at("ts")), {},
+            json.at("totalFilled"),
+            json.at("open")
     };
 
     for (const auto& f : json.at("fills")) {
-        s.fills.push_back(order_status::fill{f.at("price"), f.at("qty"), f.at("ts")});
+        s.fills.push_back(order_status::fill{f.at("price"),
+                                             f.at("qty"),
+                                             string_to_time_point(f.at("ts"))});
     }
 
     return s;
@@ -144,7 +182,7 @@ orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
                 orderbook::request{ask.at("price"), ask.at("qty"), ask.at("isBuy")});
     }
 
-    output.timestamp = json.at("ts").get<std::string>();
+    output.timestamp = string_to_time_point(json.at("ts").get<std::string>());
 
     return output;
 }
@@ -165,8 +203,8 @@ quote api::get_quote(const std::string& venue, const std::string& stock)
             json.at("askDepth"),
             json.at("last"),
             json.at("lastSize"),
-            json.at("lastTrade"),
-            json.at("quoteTime")
+            string_to_time_point(json.at("lastTrade")),
+            string_to_time_point(json.at("quoteTime"))
     };
 }
 

@@ -69,7 +69,7 @@ TEST_CASE("Orders can be placed", "[api]")
     auto api = stockfighter::api{key};
     const auto status = api.place_order(
             test_account, test_venue, test_stock, 1, 1,
-            stockfighter::direction::buy, stockfighter::order_type::market
+            stockfighter::direction::buy, stockfighter::order_type::limit
     );
 
     REQUIRE(status.venue == test_venue);
@@ -77,10 +77,21 @@ TEST_CASE("Orders can be placed", "[api]")
     REQUIRE(status.account == test_account);
     REQUIRE(status.original_quantity == 1);
     REQUIRE(status.direction == stockfighter::direction::buy);
-    REQUIRE(status.order_type == stockfighter::order_type::market);
+    REQUIRE(status.order_type == stockfighter::order_type::limit);
+    REQUIRE(status.open == true);
 
     SECTION("Orders can be deleted again")
     {
         auto status2 = api.cancel_order(test_venue, test_stock, status.id);
+        REQUIRE(status2.venue == test_venue);
+        REQUIRE(status2.symbol == test_stock);
+        REQUIRE(status2.account == test_account);
+        REQUIRE(status2.original_quantity == status.original_quantity);
+        REQUIRE(status2.account == status.account);
+        REQUIRE(status2.direction == status.direction);
+        REQUIRE(status2.order_type == status.order_type);
+        // Hmmm, shouldn't the second response have a new timestamp?
+        REQUIRE(status2.timestamp == status.timestamp);
+        REQUIRE_FALSE(status2.open);
     }
 }

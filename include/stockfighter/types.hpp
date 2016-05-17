@@ -2,10 +2,13 @@
 #ifndef STOCKFIGHTER_TYPES_HPP
 #define STOCKFIGHTER_TYPES_HPP
 
+#include <chrono>
 #include <string>
 #include <vector>
 
 namespace stockfighter {
+
+using time_point = std::chrono::system_clock::time_point;
 
 struct stock {
     std::string symbol;
@@ -48,7 +51,7 @@ struct orderbook {
     std::string symbol;
     std::vector<request> bids;
     std::vector<request> asks;
-    std::string timestamp;
+    time_point timestamp;
 };
 
 enum class order_type {
@@ -95,15 +98,15 @@ struct quote {
     int ask_depth = 0; // aggregate sizeo of *all asks*
     int last = 0; // price of last trade
     int last_size = 0; // quantity of last trade
-    std::string last_trade; // timestamp of last trade
-    std::string quote_time; // timestamp of quote
+    time_point last_trade; // timestamp of last trade
+    time_point quote_time; // timestamp of quote
 };
 
 struct order_status {
     struct fill {
         int price = 0;
         int quantity = 0;
-        std::string timestamp;
+        time_point timestamp;
     };
 
     std::string symbol;
@@ -115,7 +118,7 @@ struct order_status {
     order_type order_type = order_type::limit;
     int id = 0;
     std::string account;
-    std::string timestamp;
+    time_point timestamp;
     std::vector<fill> fills;
 
     int total_filled = 0;
