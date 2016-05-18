@@ -59,16 +59,15 @@ TEST_CASE("Requesting a quote works correctly", "[api]")
 
 TEST_CASE("Orders can be placed", "[api]")
 {
-    auto* key = std::getenv("SF_API_KEY");
-    if (key == nullptr) {
+    auto* api_key = std::getenv("SF_API_KEY");
+    if (api_key == nullptr) {
         std::clog << "API key not found, skipping tests\n"
                   << "Set environment variable SF_API_KEY to your StockFighter key"
                           << std::endl;
         return;
     }
-    auto api = stockfighter::api{key};
-    const auto status = api.place_order(
-            test_account, test_venue, test_stock, 1, 1,
+    const auto status = stockfighter::api::place_order(
+            api_key, test_account, test_venue, test_stock, 1, 1,
             stockfighter::direction::buy, stockfighter::order_type::limit
     );
 
@@ -82,7 +81,7 @@ TEST_CASE("Orders can be placed", "[api]")
 
     SECTION("Orders can be deleted again")
     {
-        auto status2 = api.cancel_order(test_venue, test_stock, status.id);
+        auto status2 = stockfighter::api::cancel_order(api_key, test_venue, test_stock, status.id);
         REQUIRE(status2.venue == test_venue);
         REQUIRE(status2.symbol == test_stock);
         REQUIRE(status2.account == test_account);

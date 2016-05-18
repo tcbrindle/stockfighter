@@ -11,6 +11,7 @@ namespace nl = nlohmann;
 using namespace std::string_literals;
 
 namespace stockfighter {
+namespace api {
 
 namespace {
 
@@ -20,7 +21,8 @@ auto string_to_time_point(const std::string& s) -> time_point
     // system_clock::time_point with fractional seconds...
     // https://github.com/HowardHinnant/date/wiki/Examples-and-Recipes#time_point_to_components
     if (s.length() < 29) {
-        throw std::runtime_error{fmt::format("\"{}\" does not look like a datetime string", s)};
+        throw std::runtime_error{
+                fmt::format("\"{}\" does not look like a datetime string", s)};
     }
 
     auto year = std::stoi(s.substr(0, 4));
@@ -31,7 +33,7 @@ auto string_to_time_point(const std::string& s) -> time_point
     auto sec = std::stoi(s.substr(17, 2));
     auto nsec = std::stoi(s.substr(20, 9));
 
-    auto ymd = date::year{year}/month/day;
+    auto ymd = date::year{year} / month / day;
 
     if (!ymd.ok()) {
         throw std::runtime_error{"Invalid date"};
@@ -39,10 +41,11 @@ auto string_to_time_point(const std::string& s) -> time_point
 
     auto p =
             date::day_point{ymd} +
-            std::chrono::hours{hour} +
-            std::chrono::minutes{min} +
-            std::chrono::seconds{sec} +
-            date::round<time_point::duration>(std::chrono::nanoseconds{nsec});
+                    std::chrono::hours{hour} +
+                    std::chrono::minutes{min} +
+                    std::chrono::seconds{sec} +
+                    date::round<time_point::duration>(
+                            std::chrono::nanoseconds{nsec});
 
     return p;
 };
@@ -76,7 +79,7 @@ auto make_order_status(const nl::json& json)
 } // end anonymous namespace
 
 
-bool api::heartbeat()
+bool heartbeat()
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/heartbeat";
     rest::get(uri);
@@ -84,7 +87,7 @@ bool api::heartbeat()
     return true;
 }
 
-bool api::venue_heartbeat(const std::string& venue)
+bool venue_heartbeat(const std::string& venue)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/heartbeat";
     const auto json = rest::get(fmt::format(uri, venue));
@@ -96,7 +99,7 @@ bool api::venue_heartbeat(const std::string& venue)
     return true;
 }
 
-std::vector<stock> api::get_stocks(const std::string& venue)
+std::vector<stock> get_stocks(const std::string& venue)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks";
     const auto json = rest::get(fmt::format(uri, venue));
@@ -110,7 +113,7 @@ std::vector<stock> api::get_stocks(const std::string& venue)
     return output;
 }
 
-orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
+orderbook get_orderbook(const std::string& venue, const std::string& stock)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}";
     const auto json = rest::get(fmt::format(uri, venue, stock));
@@ -119,12 +122,14 @@ orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
 
     for (const auto& bid : json.at("bids")) {
         output.bids.push_back(
-                orderbook::request{bid.at("price"), bid.at("qty"), bid.at("isBuy")});
+                orderbook::request{bid.at("price"), bid.at("qty"),
+                                   bid.at("isBuy")});
     }
 
     for (const auto& ask : json.at("asks")) {
         output.bids.push_back(
-                orderbook::request{ask.at("price"), ask.at("qty"), ask.at("isBuy")});
+                orderbook::request{ask.at("price"), ask.at("qty"),
+                                   ask.at("isBuy")});
     }
 
     output.timestamp = string_to_time_point(json.at("ts").get<std::string>());
@@ -132,7 +137,7 @@ orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
     return output;
 }
 
-quote api::get_quote(const std::string& venue, const std::string& stock)
+quote get_quote(const std::string& venue, const std::string& stock)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/quote";
     const auto json = rest::get(fmt::format(uri, venue, stock));
@@ -153,13 +158,14 @@ quote api::get_quote(const std::string& venue, const std::string& stock)
     };
 }
 
-order_status api::place_order(const std::string& account,
-                              const std::string& venue,
-                              const std::string& stock,
-                              int price,
-                              int quantity,
-                              direction dir,
-                              order_type type) const
+order_status place_order(const std::string& api_key,
+                         const std::string& account,
+                         const std::string& venue,
+                         const std::string& stock,
+                         int price,
+                         int quantity,
+                         direction dir,
+                         order_type type)
 {
     const auto in_json = nl::json::object(
             {
@@ -173,19 +179,26 @@ order_status api::place_order(const std::string& account,
             });
 
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders";
-    const auto out_json = rest::post(fmt::format(uri, venue, stock), in_json.dump(),
-                                     rest::header_t{"X-Starfighter-Authorization", key_});
+    const auto out_json = rest::post(fmt::format(uri, venue, stock),
+                                     in_json.dump(),
+                                     rest::header_t{
+                                             "X-Starfighter-Authorization",
+                                             api_key});
 
     return make_order_status(out_json);
 }
 
-order_status api::cancel_order(const std::string& venue,
-                               const std::string& stock, int order_id) const
+order_status cancel_order(const std::string& api_key,
+                          const std::string& venue,
+                          const std::string& stock, int order_id)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
     const auto json = rest::delete_(fmt::format(uri, venue, stock, order_id),
-                                    rest::header_t{"X-Starfighter-Authorization", key_});
+                                    rest::header_t{
+                                            "X-Starfighter-Authorization",
+                                            api_key});
     return make_order_status(json);
 }
 
-} // end namespace
+} // end namespace api
+} // end namespace stockfighter
