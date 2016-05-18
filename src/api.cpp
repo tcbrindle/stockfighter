@@ -1,12 +1,11 @@
 
 #include <stockfighter/api.hpp>
 
-#include <boost/network/protocol/http/client.hpp>
+#include "rest.hpp"
+
 #include <cppformat/format.h>
-#include <json.hpp>
 #include <date.h>
 
-namespace http = boost::network::http;
 namespace nl = nlohmann;
 
 using namespace std::string_literals;
@@ -14,60 +13,6 @@ using namespace std::string_literals;
 namespace stockfighter {
 
 namespace {
-
-template <typename ResponseType>
-auto check_response(const ResponseType& response)
-{
-    if (status(response) != 200) {
-        throw std::runtime_error{
-                fmt::format("Error: received status message \"{}\"",
-                            std::to_string(status(response)),
-                            static_cast<std::string>(status_message(response)))};
-    }
-
-    const auto json = nl::json::parse(body(response));
-
-    if (!json.value("error", "").empty()) {
-        throw std::runtime_error{fmt::format("Remote error with message \"{}\"",
-                                             json["error"].template get<std::string>())};
-    }
-
-    return json;
-}
-
-auto do_get(const std::string& uri, const std::string& key = std::string{})
-{
-    auto request = http::client::request{uri};
-    if (!key.empty()) {
-        request << boost::network::header("X-Starfighter-Authorization", key);
-    }
-    auto response = http::client{}.get(request);
-    return check_response(response);
-}
-
-auto do_post(const std::string& uri,
-             const std::string& key,
-             const std::string& body_)
-{
-    auto request = http::client::request{uri};
-    if (!key.empty()) {
-        request << boost::network::header("X-Starfighter-Authorization", key);
-    }
-    const auto response = http::client{}.post(request, body_);
-
-    return check_response(response);
-}
-
-auto do_delete(const std::string& uri, const std::string& key)
-{
-    auto request = http::client::request{uri};
-    if (!key.empty()) {
-        request << boost::network::header("X-Starfighter-Authorization", key);
-    }
-    const auto response = http::client{}.delete_(request);
-
-    return check_response(response);
-}
 
 auto string_to_time_point(const std::string& s) -> time_point
 {
@@ -134,7 +79,7 @@ auto make_order_status(const nl::json& json)
 bool api::heartbeat()
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/heartbeat";
-    do_get(uri);
+    rest::get(uri);
 
     return true;
 }
@@ -142,7 +87,7 @@ bool api::heartbeat()
 bool api::venue_heartbeat(const std::string& venue)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/heartbeat";
-    const auto json = do_get(fmt::format(uri, venue));
+    const auto json = rest::get(fmt::format(uri, venue));
 
     if (json.at("venue") != venue) {
         throw std::runtime_error{"Not working"};
@@ -154,7 +99,7 @@ bool api::venue_heartbeat(const std::string& venue)
 std::vector<stock> api::get_stocks(const std::string& venue)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks";
-    const auto json = do_get(fmt::format(uri, venue));
+    const auto json = rest::get(fmt::format(uri, venue));
 
     auto output = std::vector<stock>{};
 
@@ -168,7 +113,7 @@ std::vector<stock> api::get_stocks(const std::string& venue)
 orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}";
-    const auto json = do_get(fmt::format(uri, venue, stock));
+    const auto json = rest::get(fmt::format(uri, venue, stock));
 
     auto output = orderbook{venue, stock};
 
@@ -190,7 +135,7 @@ orderbook api::get_orderbook(const std::string& venue, const std::string& stock)
 quote api::get_quote(const std::string& venue, const std::string& stock)
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/quote";
-    const auto json = do_get(fmt::format(uri, venue, stock));
+    const auto json = rest::get(fmt::format(uri, venue, stock));
 
     return quote {
             json.at("symbol"),
@@ -228,8 +173,8 @@ order_status api::place_order(const std::string& account,
             });
 
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders";
-    const auto out_json = do_post(fmt::format(uri, venue, stock),
-                                  key_, in_json.dump());
+    const auto out_json = rest::post(fmt::format(uri, venue, stock), in_json.dump(),
+                                     rest::header_t{"X-Starfighter-Authorization", key_});
 
     return make_order_status(out_json);
 }
@@ -238,7 +183,8 @@ order_status api::cancel_order(const std::string& venue,
                                const std::string& stock, int order_id) const
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
-    const auto json = do_delete(fmt::format(uri, venue, stock, order_id), key_);
+    const auto json = rest::delete_(fmt::format(uri, venue, stock, order_id),
+                                    rest::header_t{"X-Starfighter-Authorization", key_});
     return make_order_status(json);
 }
 
