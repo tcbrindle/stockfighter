@@ -34,38 +34,40 @@ auto check_response(const ResponseType& response)
     return json;
 }
 
+void add_header(http::client::request& request, const std::string& api_key)
+{
+    if (!api_key.empty()) {
+        request << boost::network::header("X-Starfighter-Authorization",
+                                          api_key);
+    }
+}
+
 } // end anonymous namespace
 
 auto get(const std::string& uri,
-         const header_t& header) -> nl::json
+         const std::string& api_key) -> nl::json
 {
     auto request = http::client::request{uri};
-    if (!header.first.empty()) {
-        request.add_header(header);
-    }
+    add_header(request, api_key);
     auto response = http::client{}.get(request);
     return check_response(response);
 }
 
 auto post(const std::string& uri,
           const std::string& body_,
-          const header_t& header) -> nl::json
+          const std::string& api_key) -> nl::json
 {
     auto request = http::client::request{uri};
-    if (!header.first.empty()) {
-        request.add_header(header);
-    }
+    add_header(request, api_key);
     const auto response = http::client{}.post(request, body_);
     return check_response(response);
 }
 
 auto delete_(const std::string& uri,
-             const header_t& header) -> nl::json
+             const std::string& api_key) -> nl::json
 {
     auto request = http::client::request{uri};
-    if (!header.first.empty()) {
-        request.add_header(header);
-    }
+    add_header(request, api_key);
     const auto response = http::client{}.delete_(request);
     return check_response(response);
 }

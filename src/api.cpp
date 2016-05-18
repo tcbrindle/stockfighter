@@ -181,9 +181,7 @@ order_status place_order(const std::string& api_key,
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders";
     const auto out_json = rest::post(fmt::format(uri, venue, stock),
                                      in_json.dump(),
-                                     rest::header_t{
-                                             "X-Starfighter-Authorization",
-                                             api_key});
+                                     api_key);
 
     return make_order_status(out_json);
 }
@@ -194,9 +192,7 @@ order_status cancel_order(const std::string& api_key,
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
     const auto json = rest::delete_(fmt::format(uri, venue, stock, order_id),
-                                    rest::header_t{
-                                            "X-Starfighter-Authorization",
-                                            api_key});
+                                    api_key);
     return make_order_status(json);
 }
 
