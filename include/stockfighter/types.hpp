@@ -3,6 +3,7 @@
 #define STOCKFIGHTER_TYPES_HPP
 
 #include <chrono>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -123,6 +124,29 @@ struct order_status {
 
     int total_filled = 0;
     bool open = false;
+};
+
+struct level_info {
+    std::string account;
+    int instance_id{};
+    // skip instructions for now
+    std::chrono::seconds seconds_per_trading_day{};
+    std::vector<std::string> tickers;
+    std::vector<std::string> venues;
+};
+
+enum class level_state {
+    open,
+    closed,
+    // ... ?
+};
+
+struct level_status {
+    int id = 0;
+    bool done = false;
+    level_state state = level_state::closed;
+    int end_of_the_world_day = 0;
+    int trading_day = 0;
 };
 
 }

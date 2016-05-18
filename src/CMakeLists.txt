@@ -1,6 +1,10 @@
 
 
-add_library(stockfighter api.cpp rest.cpp)
+add_library(stockfighter
+    api.cpp
+    game.cpp
+    rest.cpp
+    )
 
 target_include_directories(stockfighter PRIVATE ${FMT_INCLUDE_DIRS})
 target_include_directories(stockfighter PRIVATE ${OPENSSL_INCLUDE_DIR})
