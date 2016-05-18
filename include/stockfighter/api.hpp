@@ -30,11 +30,11 @@ public:
                              const std::string& stock,
                              int price, int quantity,
                              direction dir,
-                             order_type type);
+                             order_type type) const;
 
     order_status cancel_order(const std::string& venue,
                               const std::string& stock,
-                              int order_id);
+                              int order_id) const;
 
 private:
     std::string key_;

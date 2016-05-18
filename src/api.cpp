@@ -214,7 +214,7 @@ order_status api::place_order(const std::string& account,
                               int price,
                               int quantity,
                               direction dir,
-                              order_type type)
+                              order_type type) const
 {
     const auto in_json = nl::json::object(
             {
@@ -235,7 +235,7 @@ order_status api::place_order(const std::string& account,
 }
 
 order_status api::cancel_order(const std::string& venue,
-                               const std::string& stock, int order_id)
+                               const std::string& stock, int order_id) const
 {
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
     const auto json = do_delete(fmt::format(uri, venue, stock, order_id), key_);
