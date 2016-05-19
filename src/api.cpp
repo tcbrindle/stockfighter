@@ -145,13 +145,13 @@ quote get_quote(const std::string& venue, const std::string& stock)
     return quote {
             json.at("symbol"),
             json.at("venue"),
-            json.at("bid"),
-            //json.at("ask"),
+            json.value("bid", 0),
+            json.value("ask", 0),
             json.at("bidSize"),
             json.at("askSize"),
             json.at("bidDepth"),
             json.at("askDepth"),
-            json.at("last"),
+            json.value("last", 0),
             json.at("lastSize"),
             string_to_time_point(json.at("lastTrade")),
             string_to_time_point(json.at("quoteTime"))
@@ -193,6 +193,17 @@ order_status cancel_order(const std::string& api_key,
     constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
     const auto json = rest::delete_(fmt::format(uri, venue, stock, order_id),
                                     api_key);
+    return make_order_status(json);
+}
+
+order_status get_order_status(const std::string& api_key,
+                              const std::string& venue,
+                              const std::string& stock,
+                              int order_id)
+{
+    constexpr char uri[] = "https://api.stockfighter.io/ob/api/venues/{}/stocks/{}/orders/{}";
+    const auto json = rest::get(fmt::format(uri, venue, stock, order_id),
+                                api_key);
     return make_order_status(json);
 }
 

@@ -91,8 +91,8 @@ inline auto order_type_from_string(const std::string& str) -> order_type
 struct quote {
     std::string symbol;
     std::string venue;
-    int bid = 0; // best price currently bid for the stock
-    //int ask = 0; // best price currently offered for the stock [broken/lie in docs]
+    int bid = 0; // best price currently bid for the stock [broken/lie in doc]
+    int ask = 0; // best price currently offered for the stock [broken/lie in docs]
     int bid_size = 0; // aggregate size of all orders at the best bid
     int ask_size = 0; // aggregate size of all orders at the best ask
     int bid_depth = 0; // aggregate size of *all bids*

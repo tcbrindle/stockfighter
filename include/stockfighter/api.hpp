@@ -33,6 +33,11 @@ namespace api {
                               const std::string& stock,
                               int order_id);
 
+    order_status get_order_status(const std::string& api_key,
+                                  const std::string& venue,
+                                  const std::string& stock,
+                                  int order_id);
+
 } // end namespace api
 } // end namespace stockfighter
 

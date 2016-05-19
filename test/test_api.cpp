@@ -79,6 +79,20 @@ TEST_CASE("Orders can be placed", "[api]")
     REQUIRE(status.order_type == stockfighter::order_type::limit);
     REQUIRE(status.open == true);
 
+    SECTION("Order status can be checked")
+    {
+        auto status2 = stockfighter::api::get_order_status(api_key, test_venue, test_stock, status.id);
+        REQUIRE(status2.venue == test_venue);
+        REQUIRE(status2.symbol == test_stock);
+        REQUIRE(status2.account == test_account);
+        REQUIRE(status2.original_quantity == status.original_quantity);
+        REQUIRE(status2.account == status.account);
+        REQUIRE(status2.direction == status.direction);
+        REQUIRE(status2.order_type == status.order_type);
+        // Hmmm, shouldn't the second response have a new timestamp?
+        REQUIRE(status2.timestamp == status.timestamp);
+    }
+
     SECTION("Orders can be deleted again")
     {
         auto status2 = stockfighter::api::cancel_order(api_key, test_venue, test_stock, status.id);
