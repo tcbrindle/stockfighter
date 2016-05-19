@@ -7,6 +7,8 @@
 
 using namespace std::chrono_literals;
 
+// Nested section markers are commented out as these cause Catch to repeat the
+// tests in such a way that we inevitably hit the rate limit.
 TEST_CASE("Game API is available", "[game]")
 {
     auto* api_key = std::getenv("SF_API_KEY");
@@ -26,8 +28,8 @@ TEST_CASE("Game API is available", "[game]")
         REQUIRE_FALSE(info.tickers.empty());
         REQUIRE_FALSE(info.venues.empty());
 
-        SECTION("Can get level status")
-        {
+        //SECTION("Can get level status")
+        //{
             auto status = stockfighter::game::get_level_status(api_key,
                                                                info.instance_id);
             REQUIRE(status.id == info.instance_id);
@@ -35,10 +37,10 @@ TEST_CASE("Game API is available", "[game]")
             REQUIRE(status.state == stockfighter::level_state::open);
             REQUIRE(status.end_of_the_world_day > 0);
             REQUIRE(status.trading_day > 0);
-        }
+        //}
 
-        SECTION("Can resume level")
-        {
+        //SECTION("Can resume level")
+        //{
             auto new_info = stockfighter::game::resume_level(api_key,
                                                              info.instance_id);
             REQUIRE(new_info.instance_id == info.instance_id);
@@ -46,26 +48,26 @@ TEST_CASE("Game API is available", "[game]")
             REQUIRE(new_info.venues == info.venues);
             REQUIRE(new_info.tickers == info.tickers);
             REQUIRE(new_info.seconds_per_trading_day == info.seconds_per_trading_day);
-        }
+        //}
 
-        SECTION("Can restart level")
-        {
-            auto new_info = stockfighter::game::restart_level(api_key,
+        //SECTION("Can restart level")
+        //{
+            auto new_info2 = stockfighter::game::restart_level(api_key,
                                                               info.instance_id);
-            REQUIRE(new_info.instance_id == info.instance_id);
-            REQUIRE(new_info.account != info.account);
-            REQUIRE(new_info.venues != info.venues);
-            REQUIRE(new_info.tickers != info.tickers);
-            REQUIRE(new_info.seconds_per_trading_day == info.seconds_per_trading_day);
-        }
+            REQUIRE(new_info2.instance_id == info.instance_id);
+            REQUIRE(new_info2.account != info.account);
+            REQUIRE(new_info2.venues != info.venues);
+            REQUIRE(new_info2.tickers != info.tickers);
+            REQUIRE(new_info2.seconds_per_trading_day == info.seconds_per_trading_day);
+        //}
 
-        SECTION("Can stop level")
-        {
+        //SECTION("Can stop level")
+        //{
             REQUIRE_NOTHROW(stockfighter::game::stop_level(api_key, info.instance_id));
 
             SECTION("Can't get status of a stopped level") {
                 REQUIRE_THROWS(stockfighter::game::get_level_status(api_key, info.instance_id));
             }
-        }
+        //}
     }
 }
