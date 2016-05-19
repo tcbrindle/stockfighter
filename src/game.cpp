@@ -57,6 +57,12 @@ auto start_level(const std::string& api_key, int level_num) -> level_info
     case 1:
         uri = "https://www.stockfighter.io/gm/levels/first_steps";
         break;
+    case 2:
+        uri = "https://www.stockfighter.io/gm/levels/chock_a_block";
+        break;
+    case 3:
+        uri = "https://www.stockfighter.io/gm/levels/sell_side";
+        break;
     default:
         throw std::runtime_error{"Unknown level"};
     }
